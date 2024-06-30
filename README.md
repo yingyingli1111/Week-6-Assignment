@@ -9,8 +9,6 @@ This project analyzes storm events in the United States for the year 1996, mergi
 - [Setup](#setup)
 - [Usage](#usage)
 - [Plot Description](#plot-description)
-- [Contributing](#contributing)
-- [License](#license)
 
 ## Introduction
 
