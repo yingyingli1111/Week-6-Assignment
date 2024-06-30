@@ -1,0 +1,86 @@
+---
+title: "Week 6"
+output: html_document
+date: "2024-06-30"
+---
+
+Read data of 1996:
+
+```{r, echo=TRUE}
+library(readr)
+data <- read_csv("C:/Users/lyy03/OneDrive/Documents/Mcdaniel/ANA 515/Week 6/StormEvents_details-ftp_v1.0_d1996_c20220425.csv.gz")
+
+```
+
+Clean data:
+1. select specific columns
+2. sort the data by STATE
+3. change state and county names to title case
+```{r, echo=TRUE}
+library(dplyr)
+library(stringr)
+data_sorted <- data %>% select(BEGIN_YEARMONTH, EPISODE_ID, STATE, STATE_FIPS, CZ_NAME, CZ_TYPE, CZ_FIPS, EVENT_TYPE) %>% arrange(STATE) %>% mutate (
+  STATE = str_to_title(STATE),
+  CZ_NAME = str_to_title(CZ_NAME)
+)
+```
+
+Limit to the events listed by county FIPS (CZ_TYPE of “C”) and then remove the CZ_TYPE column :
+```{r, echo = TRUE}
+data_filtered <- data_sorted %>% 
+    filter(CZ_TYPE == "C") %>%
+    select(-CZ_TYPE
+           )
+```
+
+Adjust state and county FIPS and create a new FIPS column:
+```{r, echo = TRUE}
+library(tidyr)
+data_ncol <- data_filtered %>%
+  mutate(
+    STATE_FIPS = str_pad(STATE_FIPS, width = 2, side = "left", pad = "0"),
+    CZ_FIPS = str_pad(CZ_FIPS, width = 3, side = "left", pad = "0") )%>%
+      unite("FIPS", STATE_FIPS, CZ_FIPS, sep = "", remove = FALSE)
+  
+```
+
+Rewrite column names:
+```{r, echo=TRUE}
+data_ncol <- data_ncol %>% rename_all(tolower)
+```
+
+Read state data from R
+```{r, echo = TRUE}
+data(state)
+state_data <- data.frame(
+  name = state.name,
+  region = state.region,
+  area = state.area
+)
+```
+
+merge datasets and clean:
+```{r, echo = TRUE}
+event_counts <- data_ncol %>%
+    group_by(state) %>%
+    summarise(event_count = n())
+state_data <- state_data %>% rename(state=name)
+merged_data <- merge(state_data, event_counts, by = "state", all.x=FALSE)
+
+```
+
+Scatterplot of number of storms events in 1996 by land area by region:
+```{r, echo = TRUE}
+library(ggplot2)
+ggplot(data = merged_data, aes(x=area, y=event_count, color = region)) +
+  geom_point() +
+  labs(
+    x = "Land area (square miles)",
+    y = "# of storms events in 1996",
+    color = "region"
+  ) +
+  theme_minimal()+
+  theme(
+    legend.position = "right"
+  )
+```
